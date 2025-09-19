@@ -17,6 +17,7 @@ type Block struct {
 	Hash         string    `json:"hash"`
 	Nonce        int       `json:"nonce"`
 	MerkleRoot   string    `json:"merkle_root"`
+	Difficulty   int       `json:"difficulty"`
 }
 
 func NewBlock(index int, transactions []string, prevHash string) *Block {
@@ -35,7 +36,7 @@ func NewBlock(index int, transactions []string, prevHash string) *Block {
 }
 
 func (b *Block) calculateHash() string {
-	data := fmt.Sprintf("%d%s%s%d%s", b.Index, b.Timestamp.String(), strings.Join(b.Transactions, ""), b.Nonce, b.PrevHash)
+	data := fmt.Sprintf("%d%s%s%d%s%s", b.Index, b.Timestamp.String(), strings.Join(b.Transactions, ""), b.Nonce, b.PrevHash, b.MerkleRoot)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
@@ -50,20 +51,42 @@ func (b *Block) calculateMerkleRoot() string {
 }
 
 func (b *Block) Mine(difficulty int) {
+	b.Difficulty = difficulty
+
 	target := strings.Repeat("0", difficulty)
 
 	for {
 		b.Hash = b.calculateHash()
 		if strings.HasPrefix(b.Hash, target) {
-			fmt.Printf("Block %d mined! Nonce: %d, Hash: %s\n", b.Index, b.Nonce, b.Hash)
+			fmt.Printf("Block %d mined! Nonce: %d, Diff: %d, Hash: %s\n", b.Index, b.Nonce, b.Difficulty, b.Hash)
 			break
 		}
 		b.Nonce++
 
-		if b.Nonce%10000 == 0 {
-			fmt.Printf("Mining block %d... Nonce: %d, Current hash: %s\n", b.Index, b.Nonce, b.Hash)
+		if difficulty > 0 && b.Nonce%10000 == 0 {
+			fmt.Printf("Mining block %d... Nonce: %d, Current hash: %s (diff %d)\n", b.Index, b.Nonce, b.Hash, b.Difficulty)
 		}
 	}
+}
+
+func (b *Block) MineCounted(difficulty int) int64 {
+	b.Difficulty = difficulty
+
+	target := strings.Repeat("0", difficulty)
+	var attempts int64
+	for {
+		b.Hash = b.calculateHash()
+		attempts++
+		if strings.HasPrefix(b.Hash, target) {
+			fmt.Printf("Block %d mined! Nonce: %d, Diff: %d, Hash: %s (attempts=%d)\n", b.Index, b.Nonce, b.Difficulty, b.Hash, attempts)
+			break
+		}
+		b.Nonce++
+		if difficulty > 0 && b.Nonce%10000 == 0 {
+			fmt.Printf("Mining block %d... Nonce: %d, Current hash: %s (diff %d)\n", b.Index, b.Nonce, b.Hash, b.Difficulty)
+		}
+	}
+	return attempts
 }
 
 func (b *Block) IsValid(difficulty int) bool {

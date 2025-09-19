@@ -3,13 +3,15 @@ package blockchain
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type Blockchain struct {
-	Chain      []*Block
-	PendingTxs []string
-	Difficulty int
-	mutex      sync.RWMutex
+	Chain        []*Block
+	PendingTxs   []string
+	Difficulty   int
+	lastHashrate float64
+	mutex        sync.RWMutex
 }
 
 func NewBlockchain(difficulty int) *Blockchain {
@@ -61,9 +63,22 @@ func (bc *Blockchain) MineBlock() *Block {
 	}
 
 	fmt.Printf("Mining new block with %d pending transactions\n", len(bc.PendingTxs))
-	latestBlock := bc.GetLatestBlock()
+
+	var latestBlock *Block
+	if len(bc.Chain) > 0 {
+		latestBlock = bc.Chain[len(bc.Chain)-1]
+	} else {
+		fmt.Println("No blocks in chain for mining")
+		return nil
+	}
+
 	newBlock := NewBlock(latestBlock.Index+1, bc.PendingTxs, latestBlock.Hash)
-	newBlock.Mine(bc.Difficulty)
+	start := nowUnixNano()
+	hashes := newBlock.MineCounted(bc.Difficulty)
+	dur := float64(nowUnixNano()-start) / 1e9
+	if dur > 0 {
+		bc.lastHashrate = float64(hashes) / dur
+	}
 
 	bc.Chain = append(bc.Chain, newBlock)
 	bc.PendingTxs = []string{}
@@ -88,7 +103,13 @@ func (bc *Blockchain) IsValid() bool {
 			return false
 		}
 
-		if !currentBlock.IsValid(bc.Difficulty) {
+		diff := currentBlock.Difficulty
+		if diff == 0 && currentBlock.Index == 0 {
+			diff = bc.Difficulty
+		} else if diff == 0 {
+			diff = bc.Difficulty
+		}
+		if !currentBlock.IsValid(diff) {
 			return false
 		}
 	}
@@ -104,6 +125,30 @@ func (bc *Blockchain) GetChain() []*Block {
 	copy(chain, bc.Chain)
 	return chain
 }
+
+func (bc *Blockchain) SetDifficulty(d int) {
+	bc.mutex.Lock()
+	defer bc.mutex.Unlock()
+	if d < 0 {
+		d = 0
+	}
+	bc.Difficulty = d
+	fmt.Printf("[DIFFICULTY] Chain difficulty set to %d\n", d)
+}
+
+func (bc *Blockchain) GetDifficulty() int {
+	bc.mutex.RLock()
+	defer bc.mutex.RUnlock()
+	return bc.Difficulty
+}
+
+func (bc *Blockchain) LastHashrate() float64 {
+	bc.mutex.RLock()
+	defer bc.mutex.RUnlock()
+	return bc.lastHashrate
+}
+
+func nowUnixNano() int64 { return time.Now().UnixNano() }
 
 func (bc *Blockchain) GetPendingTransactions() []string {
 	bc.mutex.RLock()
