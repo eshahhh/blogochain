@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	bc := blockchain.NewBlockchain(0)
+	bc := blockchain.NewBlockchain(1)
 
 	server := api.NewServer(bc)
 

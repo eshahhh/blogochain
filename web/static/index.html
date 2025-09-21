@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogochain - Dashboard</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 16px;
+            background: #fff;
+            color: #111;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0 0 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .col {
+            display: inline-block;
+            flex: 1;
+        }
+
+        .mining-status {
+            border: 1px solid #333;
+            padding: 8px;
+            background: #f0f0f0;
+            margin-top: 8px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .mining-status.active {
+            display: block;
+            background: #ffffcc;
+        }
+
+        .explanation {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .explanation h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+
+        .stat {
+            padding: 4px 0;
+        }
+
+        button,
+        input {
+            font-family: inherit;
+            font-size: 14px;
+            padding: 6px 8px;
+            border: 1px solid #333;
+            background: #f7f7f7;
+            color: #111;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        #blocks {
+            white-space: pre;
+            border: 1px solid #333;
+            padding: 8px;
+            margin-top: 8px;
+            max-height: 50vh;
+            overflow: auto;
+        }
+
+        #status {
+            margin: 8px 0;
+        }
+
+        .sep {
+            height: 1px;
+            background: #333;
+            margin: 12px 0;
+        }
+    </style>
+    <script>
+        let ws;
+        let minerName = "";
+
+        function connect() {
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            ws = new WebSocket(`${proto}://${location.host}/ws`);
+            ws.onopen = () => {
+                log('connected');
+                minerName = `miner-${Math.random().toString(36).slice(2, 8)}`;
+                ws.send(JSON.stringify({ type: 'hello', name: minerName }));
+            };
+            ws.onmessage = (ev) => {
+                try { handleMessage(JSON.parse(ev.data)); } catch { }
+            };
+            ws.onclose = () => { log('disconnected'); setTimeout(connect, 1000); };
+            ws.onerror = () => { };
+        }
+
+        function handleMessage(msg) {
+            if (msg.type === 'metrics') {
+                document.getElementById('miners').textContent = msg.miners;
+                document.getElementById('hashrate').textContent = `${msg.server_hashrate.toFixed(1)} H/s`;
+                document.getElementById('pending').textContent = msg.pending;
+                document.getElementById('chainlen').textContent = msg.chain_len;
+                document.getElementById('difficulty').textContent = msg.difficulty;
+            } else if (msg.type === 'chain') {
+                const out = msg.blocks.map(b => `#${b.index} ${b.hash}\n  prev: ${b.prev_hash}\n  txs(${b.transactions.length}): ${b.transactions.join(', ')}\n  merkle: ${b.merkle_root}\n  nonce: ${b.nonce}\n  time: ${b.timestamp}`).join('\n\n');
+                document.getElementById('blocks').textContent = out || '(no blocks)';
+            } else if (msg.type === 'mining_status') {
+                const statusEl = document.getElementById('mining-status');
+                if (msg.mining) {
+                    statusEl.textContent = `Mining block #${msg.block_index} (difficulty ${msg.difficulty})...`;
+                    statusEl.className = 'mining-status active';
+                } else {
+                    statusEl.className = 'mining-status';
+                }
+            } else if (msg.type === 'add_transaction_response') {
+                if (msg.success) {
+                    document.getElementById('tx').value = '';
+                    log(msg.message);
+                } else {
+                    log('Error: ' + msg.message);
+                }
+            } else if (msg.type === 'mine_block_response') {
+                log(msg.message);
+            } else if (msg.type === 'set_difficulty_response') {
+                if (msg.success) {
+                    log(`Difficulty set to ${msg.data.difficulty}`);
+                } else {
+                    log('Error: ' + msg.message);
+                }
+            } else if (msg.type === 'search_chain_response') {
+                if (msg.success) {
+                    const out = (msg.results || []).map(b => `#${b.index} ${b.hash} txs=${b.transactions.length}`).join('\n');
+                    document.getElementById('searchresults').textContent = out || '(no matches)';
+                } else {
+                    log('Error: ' + msg.message);
+                }
+            }
+        }
+
+        function log(t) { document.getElementById('status').textContent = t; }
+
+        function addTx() {
+            const v = document.getElementById('tx').value.trim();
+            if (!v) return;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'add_transaction', data: v }));
+            }
+        }
+
+        function mineNow() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'mine_block' }));
+            }
+        }
+
+        function updateDifficulty() {
+            const v = parseInt(document.getElementById('diffInput').value, 10);
+            if (isNaN(v)) return;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'set_difficulty', difficulty: v }));
+            }
+        }
+
+        window.addEventListener('load', () => { connect(); });
+    </script>
+</head>
+
+<body>
+    <h1>Blogochain</h1>
+    <div class="row">
+        <div class="col">
+            <div class="stat">Active miners (server only): <span id="miners">1</span></div>
+            <div class="stat">Server hashrate (last block): <span id="hashrate">0 H/s</span></div>
+            <div class="stat">Pending tx: <span id="pending">0</span></div>
+            <div class="stat">Chain length: <span id="chainlen">0</span></div>
+            <div class="stat">Difficulty: <span id="difficulty">-</span></div>
+        </div>
+        <div class="col">
+            <div id="mining-status" class="mining-status">Mining in progress...</div>
+            <div class="explanation">
+                <h3>Mining Status</h3>
+                <p>When you click "Mine Block", the server will start the mining process. Mining requires finding a hash
+                    that starts with a specific number of zeros (determined by the difficulty).</p>
+            </div>
+        </div>
+    </div>
+    <div class="sep"></div>
+    <div class="explanation">
+        <h3>How Blogochain Works</h3>
+        <p><strong>Difficulty:</strong> The number of leading zeros required in a block's hash. Higher difficulty = more
+            computational work needed. For example, difficulty 3 requires hashes starting with "000..."</p>
+        <p><strong>Mining:</strong> The process of finding a valid hash by incrementing a "nonce" value until the hash
+            meets the difficulty requirement. This proves computational work was done.</p>
+        <p><strong>Transactions:</strong> Data stored in blocks. Add transactions to the pending pool, then mine a block
+            to permanently record them in the blockchain.</p>
+        <p><strong>Merkle Root:</strong> A hash that represents all transactions in a block, ensuring transaction
+            integrity and enabling efficient verification.</p>
+    </div>
+    <div class="sep"></div>
+    <div class="row">
+        <div class="col">
+            <p>About: Blogochain is a blockchain-based project built by Eesha for HackClub Siege. It demonstrates the
+                basics of blockchain technology, including mining, transactions, and chain management.</p>
+        </div>
+    </div>
+    <div class="sep"></div>
+    <div class="row">
+        <input id="tx" placeholder="transaction data" />
+        <button onclick="addTx()">Add Tx</button>
+        <button onclick="mineNow()">Mine Block</button>
+        <input id="diffInput" placeholder="difficulty" style="width:90px" />
+        <button onclick="updateDifficulty()">Set Difficulty</button>
+    </div>
+    <div class="row" style="margin-top:8px;">
+        <input id="searchq" placeholder="search data" />
+        <button onclick="searchChain()">Search</button>
+    </div>
+    <div id="status"></div>
+    <div class="sep"></div>
+    <div id="blocks">Loading chain...</div>
+    <div class="sep"></div>
+    <div id="searchresults"></div>
+    <script>
+        function searchChain() {
+            const q = document.getElementById('searchq').value.trim();
+            if (!q) return;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'search_chain', query: q }));
+            }
+        }
+    </script>
+</body>
+
+</html>
