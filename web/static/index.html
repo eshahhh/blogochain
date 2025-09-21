@@ -7,21 +7,73 @@
     <title>Blogochain - Dashboard</title>
     <style>
         body {
-            font-family: monospace;
-            margin: 16px;
-            background: #fff;
-            color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #fafafa;
+            color: #333;
+            min-height: 100vh;
         }
 
         h1 {
-            font-size: 18px;
-            margin: 0 0 8px;
+            font-size: 28px;
+            margin: 0 0 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 22px;
+            color: #333;
+            margin: 0 0 15px;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0 0 10px;
+        }
+
+        .welcome-section {
+            background: #f5f5f5;
+            color: #333;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #ddd;
+        }
+
+        .welcome-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .tutorial {
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #eee;
+        }
+
+        .tutorial ol {
+            padding-left: 20px;
+        }
+
+        .tutorial li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .highlight-text {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #ccc;
         }
 
         .row {
             display: flex;
             gap: 24px;
             align-items: flex-start;
+            margin-bottom: 20px;
         }
 
         .col {
@@ -30,9 +82,9 @@
         }
 
         .mining-status {
-            border: 1px solid #333;
-            padding: 8px;
-            background: #f0f0f0;
+            border: 2px solid #ccc;
+            padding: 15px;
+            background: #f5f5f5;
             margin-top: 8px;
             font-weight: bold;
             display: none;
@@ -40,58 +92,291 @@
 
         .mining-status.active {
             display: block;
-            background: #ffffcc;
+            background: #f0f0f0;
+            border-color: #999;
         }
 
         .explanation {
             background: #f9f9f9;
             border: 1px solid #ddd;
-            padding: 12px;
-            margin: 8px 0;
-            font-size: 13px;
-            line-height: 1.4;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .explanation h3 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
         }
 
         .stat {
-            padding: 4px 0;
+            padding: 12px 0;
+            font-size: 15px;
+            background: #f5f5f5;
+            margin: 8px 0;
+            padding: 15px;
+            border-left: 3px solid #ccc;
         }
 
         button,
         input {
             font-family: inherit;
-            font-size: 14px;
-            padding: 6px 8px;
-            border: 1px solid #333;
-            background: #f7f7f7;
-            color: #111;
+            font-size: 16px;
+            padding: 12px 16px;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
         }
 
         button {
             cursor: pointer;
+            font-weight: bold;
+            border: 1px solid #999;
+            background: #f5f5f5;
+        }
+
+        button:hover {
+            background: #eee;
+        }
+
+        button:focus {
+            outline: none;
+            border-color: #999;
+        }
+
+        input {
+            background: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #999;
         }
 
         #blocks {
             white-space: pre;
-            border: 1px solid #333;
-            padding: 8px;
-            margin-top: 8px;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 15px;
             max-height: 50vh;
             overflow: auto;
+            background: #f9f9f9;
+            font-family: 'Courier New', monospace;
         }
 
         #status {
-            margin: 8px 0;
+            margin: 15px 0;
+            padding: 12px;
+            background: #f5f5f5;
+            border-left: 3px solid #ccc;
+            font-weight: bold;
         }
 
         .sep {
             height: 1px;
-            background: #333;
-            margin: 12px 0;
+            background: #ddd;
+            margin: 25px 0;
+        }
+
+        .transaction-section {
+            background: #f5f5f5;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid #ddd;
+        }
+
+        .transaction-section h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .transaction-help {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 16px;
+            background: #f0f0f0;
+            padding: 15px;
+        }
+
+        .transaction-input-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: stretch;
+        }
+
+        .transaction-input-container #tx {
+            flex: 1;
+            font-size: 18px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .transaction-input-container #tx::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+
+        .primary-btn {
+            background: #f5f5f5;
+            border: 1px solid #999;
+            padding: 20px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 180px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mine-btn {
+            background: #f5f5f5;
+            border: 1px solid #999;
+            padding: 15px 25px;
+            font-size: 16px;
+            min-width: 150px;
+        }
+
+        .difficulty-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .difficulty-container #diffInput {
+            width: 120px;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+
+        .settings-btn {
+            background: #f5f5f5;
+            border: 1px solid #999;
+            padding: 15px 20px;
+            font-size: 14px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-container #searchq {
+            flex: 1;
+            max-width: 400px;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+        }
+
+        .search-btn {
+            background: #f5f5f5;
+            border: 1px solid #999;
+            padding: 15px 25px;
+            font-size: 16px;
+            min-width: 120px;
+        }
+
+        .blockchain-display {
+            background: #f5f5f5;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #ddd;
+        }
+
+        .blockchain-display h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            background: #f5f5f5;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #ddd;
+        }
+
+        .search-results h3 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .tip-section {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 600px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .tip-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .tip-section p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        #searchresults {
+            background: #fff;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                flex-direction: column;
+            }
+
+            .transaction-input-container {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .difficulty-container {
+                justify-content: center;
+            }
         }
     </style>
     <script>
@@ -147,11 +432,14 @@
                     log('Error: ' + msg.message);
                 }
             } else if (msg.type === 'search_chain_response') {
+                const searchContainer = document.getElementById('search-results-container');
                 if (msg.success) {
                     const out = (msg.results || []).map(b => `#${b.index} ${b.hash} txs=${b.transactions.length}`).join('\n');
                     document.getElementById('searchresults').textContent = out || '(no matches)';
+                    searchContainer.style.display = 'block';
                 } else {
                     log('Error: ' + msg.message);
+                    searchContainer.style.display = 'none';
                 }
             }
         }
@@ -185,7 +473,24 @@
 </head>
 
 <body>
-    <h1>Blogochain</h1>
+    <div class="welcome-section">
+        <h2>Welcome to Blogochain!</h2>
+        <div class="tutorial">
+            <h3>How to get started:</h3>
+            <ol>
+                <li><strong>Enter a transaction:</strong> Type any text (like "Alice sent 10 coins to Bob" or "Coffee
+                    purchase $5") in the transaction field below</li>
+                <li><strong>Add it to the blockchain:</strong> Click the "Add Transaction" button to add your
+                    transaction to the pending pool</li>
+                <li><strong>Mine a block:</strong> Click "Mine Block" to permanently record your transactions in the
+                    blockchain</li>
+                <li><strong>Explore:</strong> Watch your blockchain grow and search for specific transactions!</li>
+            </ol>
+            <p class="highlight-text"><strong>Tip:</strong> Try entering transactions like "Payment for coffee",
+                "Salary deposit", or any message you want to store permanently!</p>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col">
             <div class="stat">Active miners (server only): <span id="miners">1</span></div>
@@ -204,41 +509,41 @@
         </div>
     </div>
     <div class="sep"></div>
-    <div class="explanation">
-        <h3>How Blogochain Works</h3>
-        <p><strong>Difficulty:</strong> The number of leading zeros required in a block's hash. Higher difficulty = more
-            computational work needed. For example, difficulty 3 requires hashes starting with "000..."</p>
-        <p><strong>Mining:</strong> The process of finding a valid hash by incrementing a "nonce" value until the hash
-            meets the difficulty requirement. This proves computational work was done.</p>
-        <p><strong>Transactions:</strong> Data stored in blocks. Add transactions to the pending pool, then mine a block
-            to permanently record them in the blockchain.</p>
-        <p><strong>Merkle Root:</strong> A hash that represents all transactions in a block, ensuring transaction
-            integrity and enabling efficient verification.</p>
-    </div>
-    <div class="sep"></div>
-    <div class="row">
-        <div class="col">
-            <p>About: Blogochain is a blockchain-based project built by Eesha for HackClub Siege. It demonstrates the
-                basics of blockchain technology, including mining, transactions, and chain management.</p>
+    <div class="transaction-section">
+        <h2>Add Your Transaction</h2>
+        <p class="transaction-help">Enter any text you want to store permanently on the blockchain.</p>
+
+        <div class="transaction-input-container">
+            <input id="tx" placeholder="Type your transaction here..." />
+            <button onclick="addTx()" class="primary-btn">Add Transaction</button>
+        </div>
+
+        <div class="action-buttons">
+            <button onclick="mineNow()" class="mine-btn">Mine Block</button>
+            <div class="difficulty-container">
+                <input id="diffInput" placeholder="difficulty (1-6)" />
+                <button onclick="updateDifficulty()" class="settings-btn">Set Difficulty</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input id="searchq" placeholder="Search blockchain data..." />
+            <button onclick="searchChain()" class="search-btn">Search</button>
         </div>
     </div>
+
     <div class="sep"></div>
-    <div class="row">
-        <input id="tx" placeholder="transaction data" />
-        <button onclick="addTx()">Add Tx</button>
-        <button onclick="mineNow()">Mine Block</button>
-        <input id="diffInput" placeholder="difficulty" style="width:90px" />
-        <button onclick="updateDifficulty()">Set Difficulty</button>
-    </div>
-    <div class="row" style="margin-top:8px;">
-        <input id="searchq" placeholder="search data" />
-        <button onclick="searchChain()">Search</button>
-    </div>
     <div id="status"></div>
-    <div class="sep"></div>
-    <div id="blocks">Loading chain...</div>
-    <div class="sep"></div>
-    <div id="searchresults"></div>
+
+    <div class="blockchain-display">
+        <h2>Blockchain Explorer</h2>
+        <div id="blocks">Loading chain...</div>
+    </div>
+
+    <div class="search-results" id="search-results-container" style="display: none;">
+        <h3>Search Results</h3>
+        <div id="searchresults"></div>
+    </div>
     <script>
         function searchChain() {
             const q = document.getElementById('searchq').value.trim();
